@@ -1,28 +1,36 @@
-import { useState, ChangeEvent, FormEvent } from 'react'
+import { useState, ChangeEvent, FormEvent, Dispatch, useEffect } from 'react'
+import { v4 as uuidv4} from 'uuid'
 import { categories } from '../data/categories'
 import { Activity } from '../types'
-import { ActivityActions } from '../reducers/activity-reducer'
+import { ActivityActions, ActivityState } from '../reducers/activity-reducer'
 
 type FormProps = {
     dispatch: Dispatch<ActivityActions>
+    state: ActivityState
 }
 
-export default function Form( { dispatch } : FormProps ) {
+const initialState : Activity = {
+    id: uuidv4(),
+    category: 1, // id del select
+    name: '', // actividad
+    calories: 0 // calorias
+}
 
-    const [activity, setActivity] = useState<Activity>({
-        category: 1, // id del select
-        name: '', // actividad
-        calories: 0 // calorias
-    })
+export default function Form( { dispatch, state } : FormProps ) {
+
+    const [activity, setActivity] = useState<Activity>(initialState)
+
+    useEffect(() => {
+        if (state.activeId) {
+            const selectedActivity = state.activities.filter( stateActivity => stateActivity.id === state.activeId )[0]
+            setActivity(selectedActivity)
+        }
+    }, [state.activeId])
 
     const handleChange = (e: ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>) => {
-
-        const isNumberField = ['category', 'calories'].includes(e.target.id)
-        // console.log(isNumberField) // Identifico que el input es de tipo number
-
         setActivity({
             ...activity, // Esto lo que hace es que crea un nuevo objeto y se mantiene el estado anterior todo lo que no cambie
-            [e.target.id]: isNumberField ? +e.target.value : e.target.value // Aquí lo que hace es que mantiene el state para que los valores no cambien, esto inmutable
+            [e.target.id]: e.target.value // Aquí lo que hace es que mantiene el state para que los valores no cambien, esto inmutable
         })
     }
 
@@ -34,13 +42,17 @@ export default function Form( { dispatch } : FormProps ) {
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        console.log('holi')
 
         dispatch({
             type: 'save-activity',
             payload: {
                 newActivity: activity
             }
+        })
+
+        setActivity({
+            ...initialState,
+            id: uuidv4(),
         })
     }
 
